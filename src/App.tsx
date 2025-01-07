@@ -1,4 +1,3 @@
-import './App.css'
 import Header from './components/Header'
 import GridCanvas from './components/Canva'
 function App() {
