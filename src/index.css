@@ -2,8 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-canvas {
-    width: 70vh;
-    height: 70vh;
-    border: 1px solid black;
-}  
+@layer components {
+  .canvas {
+    @apply w-[70vh] h-[70vh] border border-black;
+  }
+}
