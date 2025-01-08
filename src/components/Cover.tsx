@@ -1,6 +1,19 @@
 import Colorful from "@uiw/react-color-colorful";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { color as getColor } from "@uiw/color-convert";
+import { Button } from "./ui/button";
+import { Slider } from "./ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Checkbox } from "./ui/checkbox";
+import { Label } from "./ui/label";
 
 type ColorKey = "wingStart" | "wingEnd" | "body" | "border";
 
@@ -96,11 +109,19 @@ const useButterfly = (
             );
 
             // Draw background lines
-            for (let i=0; i<canvas.height *2; i++) {
+            for (let i = 0; i < canvas.height * 2; i++) {
               context.beginPath();
-              context.moveTo(-canvas.width, -canvas.height + i * Math.floor(Math.random() * randomness - randomness / 2));
+              context.moveTo(
+                -canvas.width,
+                -canvas.height +
+                  i * Math.floor(Math.random() * randomness - randomness / 2)
+              );
               context.strokeStyle = "rgba(255, 255, 255, 0.1)";
-              context.lineTo(canvas.width, -canvas.height + i * Math.floor(Math.random() * randomness - randomness / 2));
+              context.lineTo(
+                canvas.width,
+                -canvas.height +
+                  i * Math.floor(Math.random() * randomness - randomness / 2)
+              );
               context.stroke();
             }
 
@@ -257,50 +278,36 @@ const useButterfly = (
   };
 };
 export const Cover: React.FC = () => {
-  const {
-    ref,
-    colors,
-    setColors,
-    randomness,
-    setRandomness,
-    resize,
-    colorRandomness,
-    setColorRandomness,
-  } = useButterfly(3, 20);
+  const { ref, colors, setColors, randomness, setRandomness, resize } =
+    useButterfly(3, 20);
   const [selectedColor, setSelectedColor] = useState<ColorKey>("wingStart");
   const [charity, setCharity] = useState<boolean>(false);
 
-  const logColors = () => {
-    console.log("Current Colors:", colors);
-  };
-
   return (
-    <div className="flex flex-col items-center bg-black text-white min-h-screen p-4">
-      <div className="flex w-full max-w-4xl">
-        <canvas ref={ref} className="canvas w-1/2 bg-gray-800" />
-        <div className="w-1/2 pl-4">
-          <div className="mt-4">
-            <label className="block mb-2">Randomize Colors:</label>
-            <input
-              type="checkbox"
-              checked={colorRandomness}
-              onChange={(e) => setColorRandomness(e.target.checked)}
-              className="form-checkbox text-blue-500"
-            />
-          </div>
-          <div className="mt-4">
-            <label className="block mb-2">Select Color to Modify:</label>
-            <select
-              value={selectedColor}
-              onChange={(e) => setSelectedColor(e.target.value as ColorKey)}
-              className="mb-4 p-2 border rounded w-full bg-gray-800 text-white"
-            >
-              <option value="wingStart">Wing Start</option>
-              <option value="wingEnd">Wing End</option>
-              <option value="body">Body</option>
-              <option value="border">Border</option>
-            </select>
+    <div className="flex flex-col items-center text-white min-h-screen p-10 gap-10">
+      <div className="flex gap-8 w-2/3">
+        <canvas ref={ref} className="canvas aspect-square" />
+
+        <div className="w-1/2 flex flex-col gap-12">
+          <div className="flex flex-col gap-4">
+            <Label>Couleur a modifier</Label>
+            <Select onValueChange={(v) => setSelectedColor(v as ColorKey)}>
+              <SelectTrigger className="w-1/2">
+                <SelectValue placeholder="Couleur à modifier" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Emplacements de couleur</SelectLabel>
+                  <SelectItem value="wingStart">Début des ailes</SelectItem>
+                  <SelectItem value="wingEnd">Fin des ailes</SelectItem>
+                  <SelectItem value="body">Corps du papillon</SelectItem>
+                  <SelectItem value="border">Bord des ailes</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+
             <Colorful
+              className="!w-full"
               color={colors[selectedColor]}
               onChange={(color) => {
                 setColors((prevColors) => ({
@@ -310,47 +317,43 @@ export const Cover: React.FC = () => {
               }}
             />
           </div>
-          <div className="mt-4">
-            <label className="block mb-2">Randomness:</label>
-            <input
-              type="range"
-              min="1"
-              max="100"
-              value={randomness}
-              onChange={(e) => setRandomness(Number(e.target.value))}
-              className="w-full"
+
+          <div className="flex flex-col space-y-6">
+            <Label htmlFor="terms">Seuil d'aléatoire</Label>
+            <Slider
+              value={[randomness]}
+              min={1}
+              max={100}
+              onValueChange={(v) => setRandomness(v[0] || 1)}
             />
           </div>
-          <button
-            onClick={resize}
-            className="mt-4 p-2 bg-blue-500 text-white rounded w-full"
-          >
-            Change Dimensions
-          </button>
-          <button
-            onClick={logColors}
-            className="mt-4 p-2 bg-gray-500 text-white rounded w-full"
-          >
-            Log Colors
-          </button>
+          <Button onClick={resize}>Change dimensions</Button>
         </div>
       </div>
-      <div className="mt-4 w-full max-w-4xl">
-        <label className="inline-flex items-center">
-          <input
-            type="checkbox"
-            checked={charity}
-            onChange={(e) => setCharity(e.target.checked)}
-            className="form-checkbox text-blue-500"
-          />
-          <span className="ml-2">
-            Participate in financing a charitable offer
-          </span>
-        </label>
+
+      <div className="flex w-2/3 items-center justify-between">
+        <div className="space-y-8 w-1/2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="charity"
+              checked={charity}
+              onCheckedChange={(v: boolean) => setCharity(v)}
+            />
+            <Label htmlFor="charity">
+              Add €1 to support the "My Brother's Keeper" initiative
+            </Label>
+          </div>
+
+          <Button variant="success">Order now !</Button>
+        </div>
+
+        <div>
+          <p className="text-2xl">
+            <strong>Total :</strong>{" "}
+            <span className="text-8xl">{charity ? 20.99 : 19.99}</span>€
+          </p>
+        </div>
       </div>
-      <button className="mt-4 p-2 bg-blue-950 text-white rounded">
-        Buy Now
-      </button>
     </div>
   );
 };
