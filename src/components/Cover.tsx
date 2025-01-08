@@ -1,6 +1,7 @@
 import Colorful from "@uiw/react-color-colorful";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { color as getColor } from "@uiw/color-convert";
+import chroma from "chroma-js";
 
 type ColorKey = "wingStart" | "wingEnd" | "body" | "border";
 
@@ -10,6 +11,7 @@ const useButterfly = (
 ) => {
   const ref = useRef<HTMLCanvasElement | null>(null);
 
+  const [colorRandomness, setColorRandomness] = useState<boolean>(false);
   const [randomness, setRandomness] = useState<number>(initial_randomness);
   const [colors, setColors] = useState<Record<ColorKey, string>>({
     wingStart: "#ffe900ff",
@@ -32,8 +34,39 @@ const useButterfly = (
   // Calculate butterfly dimensions whenever randomness changes
   useEffect(() => resize(), [resize]);
 
+  const calculateBackgroundColor = useCallback(() => {
+    const wingStartColor = getColor(colors.wingStart).rgba;
+    const wingEndColor = getColor(colors.wingEnd).rgba;
+    const bodyColor = getColor(colors.body).rgba;
+    const borderColor = getColor(colors.border).rgba;
+
+    const avgColor = {
+      r: Math.round(
+        (wingStartColor.r + wingEndColor.r + bodyColor.r + borderColor.r) / 4
+      ),
+      g: Math.round(
+        (wingStartColor.g + wingEndColor.g + bodyColor.g + borderColor.g) / 4
+      ),
+      b: Math.round(
+        (wingStartColor.b + wingEndColor.b + bodyColor.b + borderColor.b) / 4
+      ),
+      a: Math.round(
+        (wingStartColor.a + wingEndColor.a + bodyColor.a + borderColor.a) / 4
+      ),
+    };
+
+    // Calculate the complementary color
+    const complementaryColor = {
+      r: 255 - avgColor.r,
+      g: 255 - avgColor.g,
+      b: 255 - avgColor.b,
+      a: avgColor.a,
+    };
+
+    return `rgba(${complementaryColor.r}, ${complementaryColor.g}, ${complementaryColor.b}, ${complementaryColor.a})`;
+  }, [colors]);
+
   useEffect(() => {
-    console.log("rerender useButterfly");
     const canvas = ref.current;
     if (canvas) {
       const context = canvas.getContext("2d");
@@ -53,6 +86,15 @@ const useButterfly = (
             const wingEndColor = getColor(colors.wingEnd).rgba;
             const bodyColor = getColor(colors.body).rgba;
             const borderColor = colors.border;
+
+            // Set background color
+            context.fillStyle = calculateBackgroundColor();
+            context.fillRect(
+              -canvas.width / 2,
+              -canvas.height / 2,
+              canvas.width,
+              canvas.height
+            );
 
             // Draw the wings
             for (let i = 1; i <= 2; i++) {
@@ -193,14 +235,31 @@ const useButterfly = (
         drawButterfly();
       }
     }
-  }, [multiplier, colors, dimensions]);
+  }, [multiplier, colors, dimensions, calculateBackgroundColor]);
 
-  return { ref, colors, setColors, randomness, setRandomness, resize };
+  return {
+    ref,
+    colors,
+    setColors,
+    randomness,
+    setRandomness,
+    resize,
+    colorRandomness,
+    setColorRandomness,
+  };
 };
 
 export const Cover: React.FC = () => {
-  const { ref, colors, setColors, randomness, setRandomness, resize } =
-    useButterfly(3, 20);
+  const {
+    ref,
+    colors,
+    setColors,
+    randomness,
+    setRandomness,
+    resize,
+    colorRandomness,
+    setColorRandomness,
+  } = useButterfly(3, 20);
   const [selectedColor, setSelectedColor] = useState<ColorKey>("wingStart");
   const [charity, setCharity] = useState<boolean>(false);
 
@@ -214,6 +273,13 @@ export const Cover: React.FC = () => {
         <canvas ref={ref} className="canvas w-1/2" />
         <div className="w-1/2 pl-4">
           <div className="mt-4">
+            <label className="block mb-2">Randomize Colors:</label>
+            <input
+              type="checkbox"
+              checked={colorRandomness}
+              onChange={(e) => setColorRandomness(e.target.checked)}
+              className="form-checkbox"
+            />
             <label className="block mb-2">Select Color to Modify:</label>
             <select
               value={selectedColor}
