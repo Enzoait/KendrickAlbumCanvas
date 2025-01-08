@@ -9,7 +9,6 @@ function App() {
       <Tour />
 
       <Cover />
-      <button>Acheter</button>
       <p>
         Copyright 2025{" "}
         <a href="https://www.github.com/Enzoait">Enzo AIT-YAKOUB</a>
