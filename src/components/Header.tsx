@@ -17,6 +17,10 @@ export const Header: React.FC = () => {
           Butterfly
         </h1>
       </div>
+      {/* Text content 2*/}
+      <div className="absolute bottom-4 text-center animate-bounce w-full h-6">
+        <p className="text-white">Défilez pour explorer</p>
+      </div>
     </header>
   );
 };
