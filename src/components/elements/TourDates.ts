@@ -51,7 +51,7 @@ export const tourDates = [
     city: "Lisbonne, Portugal",
     dateRange: "04/02",
     venue: "Estádio da Luz",
-    image: "lisbonne.jpg",
+    image: "lisbon.jpg",
     exactDates: ["4 février 2025", "5 février 2025"],
     seats: [65000, 65000],
   },

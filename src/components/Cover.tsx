@@ -1,7 +1,6 @@
 import Colorful from "@uiw/react-color-colorful";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { color as getColor } from "@uiw/color-convert";
-import chroma from "chroma-js";
 
 type ColorKey = "wingStart" | "wingEnd" | "body" | "border";
 
@@ -248,7 +247,6 @@ const useButterfly = (
     setColorRandomness,
   };
 };
-
 export const Cover: React.FC = () => {
   const {
     ref,
@@ -268,9 +266,9 @@ export const Cover: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center bg-black text-white min-h-screen p-4">
       <div className="flex w-full max-w-4xl">
-        <canvas ref={ref} className="canvas w-1/2" />
+        <canvas ref={ref} className="canvas w-1/2 bg-gray-800" />
         <div className="w-1/2 pl-4">
           <div className="mt-4">
             <label className="block mb-2">Randomize Colors:</label>
@@ -278,13 +276,15 @@ export const Cover: React.FC = () => {
               type="checkbox"
               checked={colorRandomness}
               onChange={(e) => setColorRandomness(e.target.checked)}
-              className="form-checkbox"
+              className="form-checkbox text-blue-500"
             />
+          </div>
+          <div className="mt-4">
             <label className="block mb-2">Select Color to Modify:</label>
             <select
               value={selectedColor}
               onChange={(e) => setSelectedColor(e.target.value as ColorKey)}
-              className="mb-4 p-2 border rounded w-full"
+              className="mb-4 p-2 border rounded w-full bg-gray-800 text-white"
             >
               <option value="wingStart">Wing Start</option>
               <option value="wingEnd">Wing End</option>
@@ -332,7 +332,7 @@ export const Cover: React.FC = () => {
             type="checkbox"
             checked={charity}
             onChange={(e) => setCharity(e.target.checked)}
-            className="form-checkbox"
+            className="form-checkbox text-blue-500"
           />
           <span className="ml-2">
             Participate in financing a charitable offer
