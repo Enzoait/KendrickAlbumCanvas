@@ -285,54 +285,50 @@ export const Cover: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center text-white min-h-screen p-10 gap-10">
-      <div className="flex gap-8 w-2/3">
-        <canvas ref={ref} className="canvas aspect-square" />
-
-        <div className="w-1/2 flex flex-col gap-12">
+      <div className="flex flex-col md:flex-row gap-8 w-full md:w-2/3">
+        <canvas ref={ref} className="canvas aspect-square w-full md:w-1/2" />
+        <div className="flex flex-col space-y-6 w-full md:w-1/2">
           <div className="flex flex-col gap-4">
-            <Label>Couleur a modifier</Label>
-            <Select onValueChange={(v) => setSelectedColor(v as ColorKey)}>
-              <SelectTrigger className="w-1/2">
-                <SelectValue placeholder="Couleur à modifier" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Emplacements de couleur</SelectLabel>
-                  <SelectItem value="wingStart">Début des ailes</SelectItem>
-                  <SelectItem value="wingEnd">Fin des ailes</SelectItem>
-                  <SelectItem value="body">Corps du papillon</SelectItem>
-                  <SelectItem value="border">Bord des ailes</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-
-            <Colorful
-              className="!w-full"
-              color={colors[selectedColor]}
-              onChange={(color) => {
-                setColors((prevColors) => ({
-                  ...prevColors,
-                  [selectedColor]: color.hexa,
-                }));
-              }}
-            />
+        <Label>Couleur a modifier</Label>
+        <Select onValueChange={(v) => setSelectedColor(v as ColorKey)}>
+          <SelectTrigger className="w-full md:w-1/2">
+            <SelectValue placeholder="Couleur à modifier" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+          <SelectLabel>Emplacements de couleur</SelectLabel>
+          <SelectItem value="wingStart">Début des ailes</SelectItem>
+          <SelectItem value="wingEnd">Fin des ailes</SelectItem>
+          <SelectItem value="body">Corps du papillon</SelectItem>
+          <SelectItem value="border">Bord des ailes</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Colorful
+          className="!w-full"
+          color={colors[selectedColor]}
+          onChange={(color) => {
+            setColors((prevColors) => ({
+          ...prevColors,
+          [selectedColor]: color.hexa,
+            }));
+          }}
+        />
           </div>
-
           <div className="flex flex-col space-y-6">
-            <Label htmlFor="terms">Seuil d'aléatoire</Label>
-            <Slider
-              value={[randomness]}
-              min={1}
-              max={100}
-              onValueChange={(v) => setRandomness(v[0] || 1)}
-            />
+        <Label htmlFor="terms">Seuil d'aléatoire</Label>
+        <Slider
+          value={[randomness]}
+          min={1}
+          max={100}
+          onValueChange={(v) => setRandomness(v[0] || 1)}
+        />
           </div>
           <Button onClick={resize}>Change dimensions</Button>
         </div>
       </div>
-
-      <div className="flex w-2/3 items-center justify-between">
-        <div className="space-y-8 w-1/2">
+      <div className="flex flex-col md:flex-row w-full md:w-2/3 items-center justify-between">
+        <div className="space-y-8 w-full md:w-1/2">
           <div className="flex items-center space-x-2">
             <Checkbox
               id="charity"
@@ -343,12 +339,10 @@ export const Cover: React.FC = () => {
               Add €1 to support the "My Brother's Keeper" initiative
             </Label>
           </div>
-
           <Button variant="success">Order now !</Button>
         </div>
-
         <div>
-          <p className="text-2xl">
+          <p className="text-2xl mt-2">
             <strong>Total :</strong>{" "}
             <span className="text-8xl">{charity ? 20.99 : 19.99}</span>€
           </p>
