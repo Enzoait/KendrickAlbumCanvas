@@ -95,6 +95,15 @@ const useButterfly = (
               canvas.height
             );
 
+            // Draw background lines
+            for (let i=0; i<canvas.height *2; i++) {
+              context.beginPath();
+              context.moveTo(-canvas.width, -canvas.height + i * Math.floor(Math.random() * randomness - randomness / 2));
+              context.strokeStyle = "rgba(255, 255, 255, 0.1)";
+              context.lineTo(canvas.width, -canvas.height + i * Math.floor(Math.random() * randomness - randomness / 2));
+              context.stroke();
+            }
+
             // Draw the wings
             for (let i = 1; i <= 2; i++) {
               context.save();
@@ -339,7 +348,7 @@ export const Cover: React.FC = () => {
           </span>
         </label>
       </div>
-      <button className="mt-4 p-2 bg-green-500 text-white rounded">
+      <button className="mt-4 p-2 bg-blue-950 text-white rounded">
         Buy Now
       </button>
     </div>
