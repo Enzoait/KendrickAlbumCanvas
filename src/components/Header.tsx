@@ -32,7 +32,7 @@ export const Header: React.FC = () => {
       </div>
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:mx-0 mt-20 backdrop-blur-sm bg-white/30 p-8 rounded-xl">
-          <h2 className="text-5xl font-semibold tracking-tight text-black sm:text-7xl">
+          <h2 className="font-tag text-5xl font-semibold tracking-tight text-black sm:text-7xl">
             Butterfly
           </h2>
           <p className="mt-8 text-pretty text-lg font-medium text-black sm:text-xl/8">
