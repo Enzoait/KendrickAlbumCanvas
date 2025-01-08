@@ -210,7 +210,7 @@ const useButterfly = (multiplier: number = 1, randomness: number = 10) => {
   return { canvasRef, color, setColor };
 };
 
-const ButterflyCanvas: React.FC = () => {
+export const Cover: React.FC = () => {
   const { canvasRef, color, setColor } = useButterfly(3, 20);
 
   return (
@@ -225,5 +225,3 @@ const ButterflyCanvas: React.FC = () => {
     </>
   );
 };
-
-export default ButterflyCanvas;
