@@ -1,19 +1,14 @@
 import { Header } from "./components/Header";
 import { Cover } from "./components/Cover";
 import { Tour } from "./components/Tour";
+import Footer from "./components/Footer";
 function App() {
   return (
     <>
       <Header />
-
       <Tour />
-
       <Cover />
-      <p>
-        Copyright 2025{" "}
-        <a href="https://www.github.com/Enzoait">Enzo AIT-YAKOUB</a>
-        <a href="https://www.github.com/CaptainZiboo">Lucas POYART</a>
-      </p>
+      <Footer />
     </>
   );
 }
