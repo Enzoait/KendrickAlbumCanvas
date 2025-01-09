@@ -13,7 +13,7 @@ export const Header: React.FC = () => {
         </h1>
       </div>
       <div className="absolute bottom-4 text-center animate-bounce w-full h-6">
-        <p className="text-white">Défilez pour explorer</p>
+        <p className="text-white">Scroll to explore</p>
       </div>
     </header>
   );
