@@ -14,6 +14,7 @@ import {
 } from "./ui/select";
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
+import { useDebounce } from "../hooks/useDebounce";
 
 type ColorKey = "wingStart" | "wingEnd" | "body" | "border";
 
@@ -33,24 +34,30 @@ const useButterfly = (
   });
   const [dimensions, setDimensions] = useState<number[]>([]);
 
+  const debounced_randomness = useDebounce(randomness, 100);
+  const debounced_colors = useDebounce(colors, 100);
+  const debounced_dimensions = useDebounce(dimensions, 100);
+
   const resize = useCallback(
     () =>
       setDimensions(
         Array.from({ length: 40 }, () =>
-          Math.floor(Math.random() * randomness - randomness / 2)
+          Math.floor(
+            Math.random() * debounced_randomness - debounced_randomness / 2
+          )
         )
       ),
-    [randomness]
+    [debounced_randomness]
   );
 
   // Calculate butterfly dimensions whenever randomness changes
   useEffect(() => resize(), [resize]);
 
   const calculateBackgroundColor = useCallback(() => {
-    const wingStartColor = getColor(colors.wingStart).rgba;
-    const wingEndColor = getColor(colors.wingEnd).rgba;
-    const bodyColor = getColor(colors.body).rgba;
-    const borderColor = getColor(colors.border).rgba;
+    const wingStartColor = getColor(debounced_colors.wingStart).rgba;
+    const wingEndColor = getColor(debounced_colors.wingEnd).rgba;
+    const bodyColor = getColor(debounced_colors.body).rgba;
+    const borderColor = getColor(debounced_colors.border).rgba;
 
     const avgColor = {
       r: Math.round(
@@ -62,9 +69,6 @@ const useButterfly = (
       b: Math.round(
         (wingStartColor.b + wingEndColor.b + bodyColor.b + borderColor.b) / 4
       ),
-      a: Math.round(
-        (wingStartColor.a + wingEndColor.a + bodyColor.a + borderColor.a) / 4
-      ),
     };
 
     // Calculate the complementary color
@@ -72,11 +76,11 @@ const useButterfly = (
       r: 255 - avgColor.r,
       g: 255 - avgColor.g,
       b: 255 - avgColor.b,
-      a: avgColor.a,
+      a: 1,
     };
 
     return `rgba(${complementaryColor.r}, ${complementaryColor.g}, ${complementaryColor.b}, ${complementaryColor.a})`;
-  }, [colors]);
+  }, [debounced_colors]);
 
   useEffect(() => {
     const canvas = ref.current;
@@ -87,184 +91,232 @@ const useButterfly = (
         canvas.width = canvas.clientWidth;
         canvas.height = canvas.clientHeight;
 
-        // Function to draw a butterfly
-        function drawButterfly() {
-          if (context && canvas) {
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            context.save();
-            context.translate(canvas.width / 2, canvas.height / 2);
+        // Create an offscreen canvas
+        const offscreenCanvas = document.createElement("canvas");
+        offscreenCanvas.width = canvas.width;
+        offscreenCanvas.height = canvas.height;
+        const offscreenContext = offscreenCanvas.getContext("2d");
 
-            const wingStartColor = getColor(colors.wingStart).rgba;
-            const wingEndColor = getColor(colors.wingEnd).rgba;
-            const bodyColor = getColor(colors.body).rgba;
-            const borderColor = colors.border;
+        function draw() {
+          if (offscreenContext && canvas) {
+            function background() {
+              if (offscreenContext && canvas) {
+                offscreenContext.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Set background color
-            context.fillStyle = calculateBackgroundColor();
-            context.fillRect(
-              -canvas.width / 2,
-              -canvas.height / 2,
-              canvas.width,
-              canvas.height
-            );
+                // Set background color
+                offscreenContext.fillStyle = calculateBackgroundColor();
+                offscreenContext.fillRect(0, 0, canvas.width, canvas.height);
+              }
+            }
 
-            // Draw background lines
-            for (let i = 0; i < canvas.height * 2; i++) {
-              context.beginPath();
-              context.moveTo(
-                -canvas.width,
-                -canvas.height +
-                  i * Math.floor(Math.random() * randomness - randomness / 2)
-              );
-              context.strokeStyle = "rgba(255, 255, 255, 0.1)";
-              context.lineTo(
+            // Load background image
+            const backgroundImage = new Image();
+            backgroundImage.src = "./chains.jpg"; // Replace with your image path
+            backgroundImage.onload = () => {
+              // Draw background image with blending
+              background();
+              offscreenContext.globalCompositeOperation = "overlay"; // Change blending mode to overlay
+              offscreenContext.drawImage(
+                backgroundImage,
+                0,
+                0,
                 canvas.width,
-                -canvas.height +
-                  i * Math.floor(Math.random() * randomness - randomness / 2)
+                canvas.height
               );
-              context.stroke();
-            }
-
-            // Draw the wings
-            for (let i = 1; i <= 2; i++) {
-              context.save();
-              context.scale(i === 1 ? -1 : 1, 1);
-
-              // Create gradient for the wings
-              const gradient = context.createRadialGradient(
-                0,
-                0,
-                0,
-                0,
-                0,
-                multiplier * 80
-              );
-              gradient.addColorStop(
-                0,
-                `rgba(${wingStartColor.r}, ${wingStartColor.g}, ${wingStartColor.b}, ${wingStartColor.a})`
-              );
-              gradient.addColorStop(
-                1,
-                `rgba(${wingEndColor.r}, ${wingEndColor.g}, ${wingEndColor.b}, ${wingEndColor.a})`
-              );
-
-              context.lineWidth = multiplier * 3;
-              context.strokeStyle = borderColor;
-              context.fillStyle = gradient;
-
-              // Upper part of the wing
-              context.beginPath();
-              context.moveTo(multiplier * -3, multiplier * 0);
-              context.bezierCurveTo(
-                multiplier * -40 + dimensions[0 + (i - 1) * 20],
-                multiplier * -10 + dimensions[1 + (i - 1) * 20],
-                multiplier * -60 + dimensions[2 + (i - 1) * 20],
-                multiplier * 20 + dimensions[3 + (i - 1) * 20],
-                multiplier * -30 + dimensions[4 + (i - 1) * 20],
-                multiplier * 40 + dimensions[5 + (i - 1) * 20]
-              );
-              context.bezierCurveTo(
-                multiplier * -20 + dimensions[6 + (i - 1) * 20],
-                multiplier * 50 + dimensions[7 + (i - 1) * 20],
-                multiplier * -10 + dimensions[8 + (i - 1) * 20],
-                multiplier * 50 + dimensions[9 + (i - 1) * 20],
-                multiplier * -3,
-                multiplier * -5
-              );
-              context.closePath();
-              context.fill();
-              context.stroke();
-
-              // Lower part of the wing
-              context.beginPath();
-              context.moveTo(multiplier * -3, multiplier * -5);
-              context.bezierCurveTo(
-                multiplier * -25 + dimensions[10 + (i - 1) * 20],
-                multiplier * -60 + dimensions[11 + (i - 1) * 20],
-                multiplier * -75 + dimensions[12 + (i - 1) * 20],
-                multiplier * -55 + dimensions[13 + (i - 1) * 20],
-                multiplier * -65 + dimensions[14 + (i - 1) * 20],
-                multiplier * -35 + dimensions[15 + (i - 1) * 20]
-              );
-              context.bezierCurveTo(
-                multiplier * -55 + dimensions[16 + (i - 1) * 20],
-                multiplier * -10 + dimensions[17 + (i - 1) * 20],
-                multiplier * -65 + dimensions[18 + (i - 1) * 20],
-                multiplier * 5 + dimensions[19 + (i - 1) * 20],
-                multiplier * -3,
-                multiplier * 0
-              );
-              context.closePath();
-              context.fill();
-              context.stroke();
-
-              context.restore();
-            }
-
-            // Draw the antennas first
-            context.save();
-            context.strokeStyle = `rgba(${bodyColor.r}, ${bodyColor.g}, ${bodyColor.b}, ${bodyColor.a})`;
-            context.beginPath();
-            context.moveTo(multiplier * -1, multiplier * -10);
-            context.quadraticCurveTo(
-              multiplier * -5,
-              multiplier * -20,
-              multiplier * -10,
-              multiplier * -15
-            );
-            context.moveTo(multiplier * 1, multiplier * -10);
-            context.quadraticCurveTo(
-              multiplier * 5,
-              multiplier * -20,
-              multiplier * 10,
-              multiplier * -15
-            );
-            context.stroke();
-            context.restore();
-
-            // Body of the butterfly
-            context.save();
-            context.fillStyle = `rgba(${bodyColor.r}, ${bodyColor.g}, ${bodyColor.b}, ${bodyColor.a})`;
-            context.beginPath();
-            context.moveTo(multiplier * 0, multiplier * -10);
-            context.arc(
-              multiplier * 0,
-              multiplier * -10,
-              multiplier * 3,
-              0,
-              Math.PI * 2,
-              false
-            );
-            context.fill();
-
-            context.beginPath();
-            context.moveTo(multiplier * 3, multiplier * -10);
-            context.arc(
-              multiplier * 0,
-              multiplier * -10,
-              multiplier * 3,
-              0,
-              Math.PI,
-              false
-            );
-            context.arcTo(
-              multiplier * 0,
-              multiplier * 60,
-              multiplier * 3,
-              multiplier * -10,
-              multiplier * 2
-            );
-            context.fill();
-            context.restore();
-            context.restore();
+              offscreenContext.globalCompositeOperation = "source-over";
+              // Draw the butterfly after the background image
+              butterfly();
+            };
+            backgroundImage.onerror = (e) => {
+              console.log("Could not find background image:", e);
+              // Draw the butterfly even if the background image is not found
+              background();
+              butterfly();
+            };
           }
         }
 
-        // Draw the butterfly on the canvas
-        drawButterfly();
+        function butterfly() {
+          if (!offscreenContext || !canvas || !context) return;
+
+          offscreenContext.save();
+          offscreenContext.translate(canvas.width / 2, canvas.height / 2);
+          offscreenContext.rotate(-Math.PI / 18); // Rotate 10 degrees to the left
+
+          const wingStartColor = getColor(debounced_colors.wingStart).rgba;
+          const wingEndColor = getColor(debounced_colors.wingEnd).rgba;
+          const bodyColor = getColor(debounced_colors.body).rgba;
+          const borderColor = debounced_colors.border;
+
+          // Draw the wings
+          for (let i = 1; i <= 2; i++) {
+            offscreenContext.save();
+            offscreenContext.scale(i === 1 ? -1 : 1, 1);
+
+            // Create gradient for the wings
+            const gradient = offscreenContext.createRadialGradient(
+              0,
+              0,
+              0,
+              0,
+              0,
+              multiplier * 80
+            );
+            gradient.addColorStop(
+              0,
+              `rgba(${wingStartColor.r}, ${wingStartColor.g}, ${wingStartColor.b}, ${wingStartColor.a})`
+            );
+            gradient.addColorStop(
+              1,
+              `rgba(${wingEndColor.r}, ${wingEndColor.g}, ${wingEndColor.b}, ${wingEndColor.a})`
+            );
+
+            offscreenContext.lineWidth = multiplier * 3;
+            offscreenContext.strokeStyle = borderColor;
+            offscreenContext.fillStyle = gradient;
+
+            // Upper part of the wing
+            offscreenContext.beginPath();
+            offscreenContext.moveTo(multiplier * -3, multiplier * 0);
+            offscreenContext.bezierCurveTo(
+              multiplier * -40 + debounced_dimensions[0 + (i - 1) * 20],
+              multiplier * -10 + debounced_dimensions[1 + (i - 1) * 20],
+              multiplier * -60 + debounced_dimensions[2 + (i - 1) * 20],
+              multiplier * 20 + debounced_dimensions[3 + (i - 1) * 20],
+              multiplier * -30 + debounced_dimensions[4 + (i - 1) * 20],
+              multiplier * 40 + debounced_dimensions[5 + (i - 1) * 20]
+            );
+            offscreenContext.bezierCurveTo(
+              multiplier * -20 + debounced_dimensions[6 + (i - 1) * 20],
+              multiplier * 50 + debounced_dimensions[7 + (i - 1) * 20],
+              multiplier * -10 + debounced_dimensions[8 + (i - 1) * 20],
+              multiplier * 50 + debounced_dimensions[9 + (i - 1) * 20],
+              multiplier * -3,
+              multiplier * -5
+            );
+            offscreenContext.closePath();
+            offscreenContext.fill();
+            offscreenContext.stroke();
+
+            // Lower part of the wing
+            offscreenContext.beginPath();
+            offscreenContext.moveTo(multiplier * -3, multiplier * -5);
+            offscreenContext.bezierCurveTo(
+              multiplier * -25 + debounced_dimensions[10 + (i - 1) * 20],
+              multiplier * -60 + debounced_dimensions[11 + (i - 1) * 20],
+              multiplier * -75 + debounced_dimensions[12 + (i - 1) * 20],
+              multiplier * -55 + debounced_dimensions[13 + (i - 1) * 20],
+              multiplier * -65 + debounced_dimensions[14 + (i - 1) * 20],
+              multiplier * -35 + debounced_dimensions[15 + (i - 1) * 20]
+            );
+            offscreenContext.bezierCurveTo(
+              multiplier * -55 + debounced_dimensions[16 + (i - 1) * 20],
+              multiplier * -10 + debounced_dimensions[17 + (i - 1) * 20],
+              multiplier * -65 + debounced_dimensions[18 + (i - 1) * 20],
+              multiplier * 5 + debounced_dimensions[19 + (i - 1) * 20],
+              multiplier * -3,
+              multiplier * 0
+            );
+            offscreenContext.closePath();
+            offscreenContext.fill();
+            offscreenContext.stroke();
+
+            offscreenContext.restore();
+          }
+
+          // Draw the antennas first
+          offscreenContext.save();
+          offscreenContext.strokeStyle = `rgba(${bodyColor.r}, ${bodyColor.g}, ${bodyColor.b}, ${bodyColor.a})`;
+          offscreenContext.beginPath();
+          offscreenContext.moveTo(multiplier * -1, multiplier * -10);
+          offscreenContext.quadraticCurveTo(
+            multiplier * -5,
+            multiplier * -20,
+            multiplier * -10,
+            multiplier * -15
+          );
+          offscreenContext.moveTo(multiplier * 1, multiplier * -10);
+          offscreenContext.quadraticCurveTo(
+            multiplier * 5,
+            multiplier * -20,
+            multiplier * 10,
+            multiplier * -15
+          );
+          offscreenContext.stroke();
+          offscreenContext.restore();
+
+          // Body of the butterfly
+          offscreenContext.save();
+          offscreenContext.fillStyle = `rgba(${bodyColor.r}, ${bodyColor.g}, ${bodyColor.b}, ${bodyColor.a})`;
+          offscreenContext.beginPath();
+          offscreenContext.moveTo(multiplier * 0, multiplier * -10);
+          offscreenContext.arc(
+            multiplier * 0,
+            multiplier * -10,
+            multiplier * 3,
+            0,
+            Math.PI * 2,
+            false
+          );
+          offscreenContext.fill();
+
+          offscreenContext.beginPath();
+          offscreenContext.moveTo(multiplier * 3, multiplier * -10);
+          offscreenContext.arc(
+            multiplier * 0,
+            multiplier * -10,
+            multiplier * 3,
+            0,
+            Math.PI,
+            false
+          );
+          offscreenContext.arcTo(
+            multiplier * 0,
+            multiplier * 60,
+            multiplier * 3,
+            multiplier * -10,
+            multiplier * 2
+          );
+          offscreenContext.fill();
+          offscreenContext.restore();
+          offscreenContext.restore();
+
+          // Draw text
+          drawText();
+
+          // Copy the offscreen canvas to the main canvas
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(offscreenCanvas, 0, 0);
+        }
+
+        function drawText() {
+          if (!offscreenContext || !canvas) return;
+
+          offscreenContext.save();
+          offscreenContext.font = "30px StreetBomber"; // Change font here
+          offscreenContext.fillStyle = "black";
+          offscreenContext.textAlign = "center";
+          offscreenContext.textBaseline = "bottom";
+          offscreenContext.letterSpacing = "4px"; // Add letter spacing
+
+          // Draw "Kendrick Lamar" horizontally at the bottom
+          offscreenContext.fillText(
+            "Butterfly",
+            canvas.width / 2,
+            canvas.height - 10
+          );
+          offscreenContext.restore();
+        }
+
+        draw();
       }
     }
-  }, [multiplier, colors, dimensions, calculateBackgroundColor]);
+  }, [
+    multiplier,
+    debounced_colors,
+    debounced_dimensions,
+    calculateBackgroundColor,
+  ]);
 
   return {
     ref,
@@ -277,6 +329,7 @@ const useButterfly = (
     setColorRandomness,
   };
 };
+
 export const Cover: React.FC = () => {
   const { ref, colors, setColors, randomness, setRandomness, resize } =
     useButterfly(3, 20);
@@ -289,40 +342,40 @@ export const Cover: React.FC = () => {
         <canvas ref={ref} className="canvas aspect-square w-full md:w-1/2" />
         <div className="flex flex-col space-y-6 w-full md:w-1/2">
           <div className="flex flex-col gap-4">
-        <Label>Couleur a modifier</Label>
-        <Select onValueChange={(v) => setSelectedColor(v as ColorKey)}>
-          <SelectTrigger className="w-full md:w-1/2">
-            <SelectValue placeholder="Couleur à modifier" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-          <SelectLabel>Emplacements de couleur</SelectLabel>
-          <SelectItem value="wingStart">Début des ailes</SelectItem>
-          <SelectItem value="wingEnd">Fin des ailes</SelectItem>
-          <SelectItem value="body">Corps du papillon</SelectItem>
-          <SelectItem value="border">Bord des ailes</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        <Colorful
-          className="!w-full"
-          color={colors[selectedColor]}
-          onChange={(color) => {
-            setColors((prevColors) => ({
-          ...prevColors,
-          [selectedColor]: color.hexa,
-            }));
-          }}
-        />
+            <Label>Couleur a modifier</Label>
+            <Select onValueChange={(v) => setSelectedColor(v as ColorKey)}>
+              <SelectTrigger className="w-full md:w-1/2">
+                <SelectValue placeholder="Couleur à modifier" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Emplacements de couleur</SelectLabel>
+                  <SelectItem value="wingStart">Début des ailes</SelectItem>
+                  <SelectItem value="wingEnd">Fin des ailes</SelectItem>
+                  <SelectItem value="body">Corps du papillon</SelectItem>
+                  <SelectItem value="border">Bord des ailes</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Colorful
+              className="!w-full"
+              color={colors[selectedColor]}
+              onChange={(color) => {
+                setColors((prevColors) => ({
+                  ...prevColors,
+                  [selectedColor]: color.hexa,
+                }));
+              }}
+            />
           </div>
           <div className="flex flex-col space-y-6">
-        <Label htmlFor="terms">Seuil d'aléatoire</Label>
-        <Slider
-          value={[randomness]}
-          min={1}
-          max={100}
-          onValueChange={(v) => setRandomness(v[0] || 1)}
-        />
+            <Label htmlFor="terms">Seuil d'aléatoire</Label>
+            <Slider
+              value={[randomness]}
+              min={1}
+              max={100}
+              onValueChange={(v) => setRandomness(v[0] || 1)}
+            />
           </div>
           <Button onClick={resize}>Change dimensions</Button>
         </div>
