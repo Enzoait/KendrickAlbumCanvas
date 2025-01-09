@@ -24,6 +24,7 @@ export const Description: React.FC = () => {
             alt=""
             className="w-full h-full object-cover"
           />
+          <div className="absolute inset-0 bg-gradient-to-b from-background to-transparent"></div>
           <div className="absolute inset-0 bg-gradient-to-r from-background to-transparent"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
         </div>
