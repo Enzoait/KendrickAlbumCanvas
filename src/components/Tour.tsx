@@ -1,6 +1,6 @@
 import React from "react";
 import "tailwindcss/tailwind.css";
-import { tourDates } from "./elements/TourDates";
+import { tourDates } from "@/data/tour";
 
 export const Tour: React.FC = () => {
   return (
